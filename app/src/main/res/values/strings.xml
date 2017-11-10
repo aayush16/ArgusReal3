@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">ArgusReal3</string>
+    <string name="current">current</string>
+    <string name="voltage">voltage</string>
+    <string name="temperature">temperature</string>
+    <string name="available_channels">Available Channels:</string>
+    <string name="argus">ARGUS</string>
+
+</resources>
