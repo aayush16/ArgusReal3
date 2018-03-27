@@ -28,14 +28,14 @@ public class Temperature extends AppCompatActivity {
         series = new LineGraphSeries<DataPoint>();
         graph.addSeries(series);
         graph.getGridLabelRenderer().setHorizontalLabelsVisible(false);
-        graph.getGridLabelRenderer().setVerticalAxisTitle("Temperature °F");
+        graph.getGridLabelRenderer().setVerticalAxisTitle("Temperature °C");
         Viewport viewport = graph.getViewport();
         viewport.setXAxisBoundsManual(true);
         viewport.setMinX(0);
-        viewport.setMaxX(10);
+        viewport.setMaxX(20);
         viewport.setYAxisBoundsManual(true);
-        viewport.setMinY(0);
-        viewport.setMaxY(100);
+        viewport.setMinY(-20);
+        viewport.setMaxY(60);
         viewport.setScrollable(true);
 
 
@@ -59,7 +59,7 @@ public class Temperature extends AppCompatActivity {
                     });
 
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                         // manage error ...
                     }
@@ -71,7 +71,8 @@ public class Temperature extends AppCompatActivity {
     // add random data to graph
     private void addEntry() {
         Random r = new Random();
-        series.appendData(new DataPoint(lastX++, r.nextInt(101)), true, 10);
+        int randomNum = r.nextInt((60 + 20) + 1) + -20;
+        series.appendData(new DataPoint(lastX++, randomNum), true, 20);
     }
 
     public void goBack(View view){
