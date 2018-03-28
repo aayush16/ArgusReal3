@@ -16,28 +16,23 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MenuScreen extends AppCompatActivity {
+
     DynamoDBMapper dynamoDBMapper;
     AmazonDynamoDBClient dynamoDBClient;
-    String names;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        AWSMobileClient.getInstance().initialize(this).execute();
         setContentView(R.layout.activity_menu_screen);
+
         dynamoDBClient = new AmazonDynamoDBClient(AWSMobileClient.getInstance().getCredentialsProvider());
         this.dynamoDBMapper = DynamoDBMapper.builder()
                 .dynamoDBClient(dynamoDBClient)
                 .awsConfiguration(AWSMobileClient.getInstance().getConfiguration())
                 .build();
-    }
 
-    public void goCurrent(View view){
-        Intent currentclass = new Intent(this, Current.class);
-        startActivity(currentclass);
-    }
-
-    public void goTemperature(View view){
-        Intent temperatureclass = new Intent(this, Temperature.class);
-        startActivity(temperatureclass);
     }
 
     Runnable runnable = new Runnable() {
@@ -54,14 +49,14 @@ public class MenuScreen extends AppCompatActivity {
 
             ScanResult result = dynamoDBClient.scan(scanRequest);
             for (Map<String, AttributeValue> item2 : result.getItems()) {
-                System.out.println(item2);
+                //System.out.println(item2);
                 s = item2.toString();
                 String prefix = "{userId={S: ";
                 String postfix = ",}}";
                 d = s.substring(s.indexOf(prefix) + prefix.length(), s.indexOf(postfix));
-                System.out.println(d);
-                /*foo = Integer.parseInt(d);
-                System.out.println(foo);*/
+                //System.out.println(d);
+                double conv = Double.parseDouble(d);
+                System.out.println(conv);
             }
 
         }
@@ -69,11 +64,24 @@ public class MenuScreen extends AppCompatActivity {
 
     Thread mythread = new Thread(runnable);
 
+
+    public void goCurrent(View view){
+        Intent currentclass = new Intent(this, Current.class);
+        startActivity(currentclass);
+    }
+
+    public void goTemperature(View view){
+        Intent temperatureclass = new Intent(this, Temperature.class);
+        startActivity(temperatureclass);
+        mythread.start();
+    }
+
+
     public void goVoltage(View view) {
         // Intent currentclass = new Intent(this, Values.class);
         Intent currentclass = new Intent(this, DynamoTable.class);
         startActivity(currentclass);
-        mythread.start();
+
 
     }
 }

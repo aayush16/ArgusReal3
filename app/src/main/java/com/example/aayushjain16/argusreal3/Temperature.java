@@ -72,6 +72,11 @@ public class Temperature extends AppCompatActivity {
     private void addEntry() {
         Random r = new Random();
         int randomNum = r.nextInt((60 + 20) + 1) + -20;
+        if (randomNum >= 60){
+            randomNum = 60;
+        }else if (randomNum <= -20){
+            randomNum = -20;
+        }
         series.appendData(new DataPoint(lastX++, randomNum), true, 20);
     }
 
