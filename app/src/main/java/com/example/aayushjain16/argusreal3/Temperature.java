@@ -1,6 +1,8 @@
 package com.example.aayushjain16.argusreal3;
 
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import android.content.Intent;
@@ -8,6 +10,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 
+import com.amazonaws.mobile.client.AWSMobileClient;
+import com.amazonaws.mobileconnectors.dynamodbv2.dynamodbmapper.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.Viewport;
 import com.jjoe64.graphview.series.DataPoint;
@@ -15,6 +23,10 @@ import com.jjoe64.graphview.series.LineGraphSeries;
 
 
 public class Temperature extends AppCompatActivity {
+    DynamoDBMapper dynamoDBMapper;
+    AmazonDynamoDBClient dynamoDBClient;
+    double send_double;
+
 
     private LineGraphSeries<DataPoint> series;
     private int lastX = 0;
@@ -22,7 +34,18 @@ public class Temperature extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        AWSMobileClient.getInstance().initialize(this).execute();
         setContentView(R.layout.activity_temperature);
+
+
+        dynamoDBClient = new AmazonDynamoDBClient(AWSMobileClient.getInstance().getCredentialsProvider());
+        this.dynamoDBMapper = DynamoDBMapper.builder()
+                .dynamoDBClient(dynamoDBClient)
+                .awsConfiguration(AWSMobileClient.getInstance().getConfiguration())
+                .build();
+
+
+
 
         GraphView graph = (GraphView) findViewById(R.id.graph);
         series = new LineGraphSeries<DataPoint>();
@@ -43,6 +66,56 @@ public class Temperature extends AppCompatActivity {
 
 
     }
+
+    Runnable runnable = new Runnable() {
+        public void run() {
+            String s, d, temp, time, prefixtime, postfixtime, prefixtemp, postfixtemp, prefixvoltage, postfixvoltage, voltage;
+            double tempread, finaltemp = 0, voltageread = 0;
+            double timeread, previoustimeread = 0, finalvoltage = 0;
+            int foo = 0;
+            int i = 0;
+            Map<String,AttributeValue> item = new HashMap<String, AttributeValue>();
+            ScanRequest scanRequest = new ScanRequest()
+                    .withTableName("argus-mobilehub-692691894-ARGUS-Mobile");
+            // .withTableName("argus-mobilehub-1424956396-table1");
+
+            ScanResult result = dynamoDBClient.scan(scanRequest);
+            for (Map<String, AttributeValue> item2 : result.getItems()) {
+                System.out.println(item2);
+                s = item2.toString();
+                //System.out.println(s);
+                prefixtemp = "userId={S: ArgusPi,}, payload={M: {temp_c={N: ";
+                postfixtemp = ",}, timestamp";
+                temp = s.substring(s.indexOf(prefixtemp) + prefixtemp.length(), s.indexOf(postfixtemp));
+                prefixtime = "userId={S: ArgusPi,}, payload={M: {temp_c={N: " + temp + ",}, timestamp={N: ";
+                postfixtime = ",}, id={S: ArgusPi,}";
+                String timetemp = s.substring(s.indexOf(prefixtime) + prefixtime.length(), s.indexOf(postfixtime));
+                prefixvoltage = prefixtime + timetemp + postfixtime + ", voltage={N: ";
+                postfixvoltage = ",}},}}";
+                voltage = s.substring(s.indexOf(prefixvoltage) + prefixvoltage.length(), s.indexOf(postfixvoltage));
+                voltageread = Double.parseDouble(voltage);
+                tempread = Double.parseDouble(temp);
+                timeread = Double.parseDouble(timetemp);
+                if (timeread > previoustimeread)
+                {
+                    finaltemp = tempread;
+                    previoustimeread = timeread;
+                    finalvoltage = voltageread;
+
+                }
+                System.out.println(temp);
+                System.out.println(timetemp);
+                System.out.println(timeread);
+                System.out.println(voltage);
+
+            }
+            send_double = finaltemp;
+            System.out.println(finaltemp);
+
+        }
+    };
+
+    Thread mythread = new Thread(runnable);
 
     @Override
     protected void onResume() {
@@ -70,14 +143,14 @@ public class Temperature extends AppCompatActivity {
 
     // add random data to graph
     private void addEntry() {
-        Random r = new Random();
-        int randomNum = r.nextInt((60 + 20) + 1) + -20;
-        if (randomNum >= 60){
-            randomNum = 60;
-        }else if (randomNum <= -20){
-            randomNum = -20;
+        mythread.start();
+
+        if (send_double>= 60){
+           send_double = 60;
+        }else if (send_double <= -20){
+            send_double = -20;
         }
-        series.appendData(new DataPoint(lastX++, randomNum), true, 20);
+        series.appendData(new DataPoint(lastX++, send_double), true, 20);
     }
 
     public void goBack(View view){
