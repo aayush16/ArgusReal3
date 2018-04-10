@@ -56,10 +56,12 @@ public class Temperature extends AppCompatActivity {
         viewport.setXAxisBoundsManual(true);
         viewport.setMinX(0);
         viewport.setMaxX(20);
-        viewport.setYAxisBoundsManual(true);
-        viewport.setMinY(-20);
-        viewport.setMaxY(60);
-        viewport.setScrollable(true);
+        //viewport.setYAxisBoundsManual(true);
+        //viewport.setMinY(20);
+        //viewport.setMaxY(23);
+
+        viewport.setScalable(true);
+        viewport.setScalableY(true);
 
 
         graph.addSeries(series);
@@ -70,7 +72,7 @@ public class Temperature extends AppCompatActivity {
     Runnable runnable = new Runnable() {
         public void run() {
             String s, d, temp, time, prefixtime, postfixtime, prefixtemp, postfixtemp, prefixvoltage, postfixvoltage, voltage;
-            double tempread, finaltemp = 0, voltageread = 0;
+            double tempread, finaltemp = 0.00, voltageread = 0;
             double timeread, previoustimeread = 0, finalvoltage = 0;
             int foo = 0;
             int i = 0;
@@ -132,7 +134,7 @@ public class Temperature extends AppCompatActivity {
                     });
 
                     try {
-                        Thread.sleep(100);
+                        Thread.sleep(60000);
                     } catch (InterruptedException e) {
                         // manage error ...
                     }
@@ -144,13 +146,15 @@ public class Temperature extends AppCompatActivity {
     // add random data to graph
     private void addEntry() {
         mythread.start();
+        if (send_double != 0.00) {
 
-        if (send_double>= 60){
-           send_double = 60;
-        }else if (send_double <= -20){
-            send_double = -20;
+            if (send_double >= 60) {
+                send_double = 60;
+            } else if (send_double <= -20) {
+                send_double = -20;
+            }
+            series.appendData(new DataPoint(lastX++, send_double), true, 20);
         }
-        series.appendData(new DataPoint(lastX++, send_double), true, 20);
     }
 
     public void goBack(View view){
