@@ -3,6 +3,8 @@ package com.example.aayushjain16.argusreal3;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Random;
 
 import android.content.Intent;
@@ -25,7 +27,12 @@ import com.jjoe64.graphview.series.LineGraphSeries;
 public class Temperature extends AppCompatActivity {
     DynamoDBMapper dynamoDBMapper;
     AmazonDynamoDBClient dynamoDBClient;
+    ArrayList all_temps = new ArrayList( );
+
+    long milli = 1000;
     double send_double;
+    double tempread = 0;
+    boolean pull_temps = false;
 
 
     private LineGraphSeries<DataPoint> series;
@@ -61,10 +68,12 @@ public class Temperature extends AppCompatActivity {
         //viewport.setMaxY(23);
 
         viewport.setScalable(true);
-        viewport.setScalableY(true);
+        //viewport.setScalableY(true);
 
 
         graph.addSeries(series);
+
+
 
 
     }
@@ -72,8 +81,8 @@ public class Temperature extends AppCompatActivity {
     Runnable runnable = new Runnable() {
         public void run() {
             String s, d, temp, time, prefixtime, postfixtime, prefixtemp, postfixtemp, prefixvoltage, postfixvoltage, voltage;
-            double tempread, finaltemp = 0.00, voltageread = 0;
-            double timeread, previoustimeread = 0, finalvoltage = 0;
+            double timeread, finaltemp = 0.00, voltageread = 0;
+            double previoustimeread = 0, finalvoltage = 0;
             int foo = 0;
             int i = 0;
             Map<String,AttributeValue> item = new HashMap<String, AttributeValue>();
@@ -83,7 +92,7 @@ public class Temperature extends AppCompatActivity {
 
             ScanResult result = dynamoDBClient.scan(scanRequest);
             for (Map<String, AttributeValue> item2 : result.getItems()) {
-                System.out.println(item2);
+                //System.out.println(item2);
                 s = item2.toString();
                 //System.out.println(s);
                 prefixtemp = "userId={S: ArgusPi,}, payload={M: {temp_c={N: ";
@@ -105,12 +114,24 @@ public class Temperature extends AppCompatActivity {
                     finalvoltage = voltageread;
 
                 }
-                System.out.println(temp);
-                System.out.println(timetemp);
-                System.out.println(timeread);
-                System.out.println(voltage);
+
+                //System.out.println(temp);
+                //System.out.println(timetemp);
+
+                //System.out.println(timeread);
+                all_temps.add(tempread);
+                //System.out.println(tempread);
+
+
+                    //System.out.println(voltage);
+
+
+
 
             }
+
+
+
             send_double = finaltemp;
             System.out.println(finaltemp);
 
@@ -134,7 +155,7 @@ public class Temperature extends AppCompatActivity {
                     });
 
                     try {
-                        Thread.sleep(60000);
+                        Thread.sleep(milli);
                     } catch (InterruptedException e) {
                         // manage error ...
                     }
@@ -145,7 +166,34 @@ public class Temperature extends AppCompatActivity {
 
     // add random data to graph
     private void addEntry() {
+
         mythread.start();
+
+        if (pull_temps == false){
+
+
+            Iterator it = all_temps.iterator( );
+            while ( it.hasNext( ) ) {
+                String plt = it.next( ).toString();
+                System.out.println(plt);
+                System.out.println("+");
+
+                double plott = Double.parseDouble(plt);
+                if (plott >= 60) {
+                    plott = 60;
+                } else if (plott <= -20) {
+                    plott = -20;
+                }
+                series.appendData(new DataPoint(lastX++, plott), true, 360);
+            }
+            if(lastX >= 1){
+                pull_temps = true;
+                milli = 60000;
+            }
+
+
+        }
+
         if (send_double != 0.00) {
 
             if (send_double >= 60) {
@@ -153,7 +201,7 @@ public class Temperature extends AppCompatActivity {
             } else if (send_double <= -20) {
                 send_double = -20;
             }
-            series.appendData(new DataPoint(lastX++, send_double), true, 20);
+            series.appendData(new DataPoint(lastX++, send_double), true, 360);
         }
     }
 
